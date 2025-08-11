@@ -18,13 +18,19 @@
     "image-tagging",
     "cloudformation"
   ],
-  "author": "",
+  "author": "dsfx3d",
+  "repository": {
+    "url": "https://github.com/98kb/aws.git"
+  },
+  "homepage": "https://github.com/98kb/aws/tree/main/packages/ecr-image-tagger-construct#98kbecr-image-tagger-construct",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
     "aws-cdk-lib": "^2.201.0",
-    "constructs": "^10.4.2",
-    "@mapp/ecr-image-tagger-lambda": "workspace:*"
+    "constructs": "^10.4.2"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

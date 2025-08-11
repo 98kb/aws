@@ -26,9 +26,6 @@ importers:
 
   packages/ecr-image-tagger-construct:
     dependencies:
-      '@mapp/ecr-image-tagger-lambda':
-        specifier: workspace:*
-        version: link:../ecr-image-tagger-lambda
       aws-cdk-lib:
         specifier: ^2.201.0
         version: 2.210.0(constructs@10.4.2)
@@ -39,22 +36,6 @@ importers:
       '@types/node':
         specifier: ^18.0.0
         version: 18.19.122
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(typescript@5.9.2)
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.2
-
-  packages/ecr-image-tagger-lambda:
-    dependencies:
-      '@aws-sdk/client-ecr':
-        specifier: ^3.835.0
-        version: 3.864.0
-    devDependencies:
-      '@types/aws-lambda':
-        specifier: ^8.10.0
-        version: 8.10.152
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(typescript@5.9.2)
@@ -788,9 +769,6 @@ packages:
 
   '@tybys/wasm-util@0.10.0':
     resolution: {integrity: sha512-VyyPYFlOMNylG45GoAe0xDoLwWuowvf92F9kySqzYh8vmYm7D2u4iUJKa1tOUpS70Ku13ASrOkS4ScXFsTaCNQ==}
-
-  '@types/aws-lambda@8.10.152':
-    resolution: {integrity: sha512-soT/c2gYBnT5ygwiHPmd9a1bftj462NWVk2tKCc1PYHSIacB2UwbTS2zYG4jzag1mRDuzg/OjtxQjQ2NKRB6Rw==}
 
   '@types/dotenv@8.2.3':
     resolution: {integrity: sha512-g2FXjlDX/cYuc5CiQvyU/6kkbP1JtmGzh0obW50zD7OKeILVL0NSpPWLXVfqoAGQjom2/SLLx9zHq0KXvD6mbw==}
@@ -3702,8 +3680,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
     optional: true
-
-  '@types/aws-lambda@8.10.152': {}
 
   '@types/dotenv@8.2.3':
     dependencies:

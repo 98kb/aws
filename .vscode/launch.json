@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Selected Package",
+      "cwd": "${workspaceFolder}/packages/${input:packageName}",
+      "program": "${workspaceFolder}/packages/${input:packageName}/dev/bin.ts",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["tsx", "watch"],
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**", "**/<node_internals>/**"],
+      "envFile": "${workspaceFolder}/.devcontainer/.env"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "packageName",
+      "type": "pickString",
+      "description": "Select the package to debug",
+      "options": [
+        "ecr-publisher"
+      ]
+    }
+  ]
+}

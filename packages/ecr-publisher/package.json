@@ -1,7 +1,13 @@
 {
   "name": "@98kb/ecr-publisher",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A CLI tool to automatically version, build, and publish Docker images to AWS ECR (Elastic Container Registry).",
+  "author": "dsfx3d",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/98kb/aws.git"
+  },
+  "homepage": "https://github.com/98kb/aws/tree/main/packages/ecr-publisher#98kbecr-publisher",
   "publishConfig": {
     "access": "public"
   },
@@ -15,7 +21,6 @@
     "dev": "pnpx tsx src/index.ts",
     "build": "pnpm build:tsup && pnpm typecheck"
   },
-  "author": "dsfx3d",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
     "@aws-sdk/client-ecr": "^3.835.0",

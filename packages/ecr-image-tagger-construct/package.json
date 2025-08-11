@@ -1,0 +1,44 @@
+{
+  "name": "@98kb/ecr-image-tagger-construct",
+  "version": "1.0.0",
+  "description": "An AWS CDK construct for automated ECR image tagging with stage tags during deployment.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsup src/index.ts --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "aws-cdk",
+    "construct",
+    "ecr",
+    "docker",
+    "image-tagging",
+    "cloudformation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "aws-cdk-lib": "^2.201.0",
+    "constructs": "^10.4.2",
+    "@mapp/ecr-image-tagger-lambda": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "aws-cdk-lib": "^2.201.0",
+    "constructs": "^10.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

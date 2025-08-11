@@ -1,0 +1,23 @@
+{
+  "name": "ecr-image-tagger-lambda",
+  "version": "1.0.0",
+  "description": "CDK construct and Lambda function for ECR image tagging in the MAPP semantic layer",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": "",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "@aws-sdk/client-ecr": "^3.835.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "name": "@98kb/ecr-publisher",
-  "version": "1.0.3",
-  "description": "A CLI tool to automatically version, build, and publish Docker images to AWS ECR (Elastic Container Registry).",
+  "version": "1.0.4",
+  "description": "A CLI tool to version, build, and publish Docker images to AWS ECR (Elastic Container Registry).",
   "license": "MIT",
   "author": "dsfx3d",
   "repository": {

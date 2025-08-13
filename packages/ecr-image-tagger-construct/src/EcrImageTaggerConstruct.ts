@@ -1,4 +1,4 @@
-import type {EcrTaggingProperties} from "../ecr-image-tagger-lambda";
+import type {EcrImageTaggerProps} from "./EcrImageTaggerProps";
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
@@ -23,7 +23,7 @@ export class EcrImageTaggerConstruct extends Construct {
   public readonly customResource: cdk.CustomResource;
   public readonly taggerFunction: lambda.Function;
 
-  constructor(scope: Construct, id: string, props: EcrTaggingProperties) {
+  constructor(scope: Construct, id: string, props: EcrImageTaggerProps) {
     super(scope, id);
 
     const {

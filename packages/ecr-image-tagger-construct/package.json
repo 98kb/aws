@@ -1,9 +1,13 @@
 {
   "name": "@98kb/ecr-image-tagger-construct",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An AWS CDK construct for automated ECR image tagging with stage tags during deployment.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "ecr-image-tagger-lambda"
+  ],
   "scripts": {
     "build": "tsup src/index.ts",
     "typecheck": "tsc --noEmit",
@@ -43,8 +47,5 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "files": [
-    "dist"
-  ]
+  }
 }

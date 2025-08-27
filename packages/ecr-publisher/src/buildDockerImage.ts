@@ -38,8 +38,6 @@ function toBuildCommandRequest(
 ): BuildCommandRequest {
   const buildContext = opts.context;
   const imageTag = `${opts.repo}:${version}`;
-  console.log(`📁 Using build context: ${buildContext}`);
-  console.log(`🏗️  Building: ${imageTag}`);
   return {buildContext, imageTag, version, dockerArgs: opts.dockerArgs};
 }
 

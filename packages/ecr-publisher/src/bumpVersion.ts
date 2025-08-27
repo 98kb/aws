@@ -9,7 +9,7 @@ export function bumpVersion(version: string, bumpType: BumpType): string {
   }
   // eslint-disable-next-line no-console
   console.log(
-    `🔧 ${chalk.yellow("Bumping version:")} ${chalk.blueBright(version)} → ${chalk.green(newVersion)}`,
+    `🔧 ${chalk.magenta("Bumping version:")} ${chalk.blueBright(version)} → ${chalk.green(newVersion)}`,
   );
   return newVersion;
 }

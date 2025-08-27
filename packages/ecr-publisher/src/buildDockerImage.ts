@@ -1,14 +1,13 @@
 /* eslint-disable no-console */
-import type {Options} from "./Options";
+import type {PublishEcrOptions} from "./PublishEcrOptions";
 import {promptConfirmOrExit} from "./promptConfirmOrExit";
 import {printCommand} from "./printCommand";
 import {executeCommand} from "./executeCommand";
 
 type BuildCommandRequest = {
   imageTag: string;
-  buildContext: string;
   version: string;
-  dockerArgs?: string[];
+  dockerArgs: string[];
 };
 
 /**
@@ -20,7 +19,7 @@ type BuildCommandRequest = {
  * @returns Promise<string> - The image tag of the built image
  */
 export async function buildDockerImage(
-  opts: Options,
+  opts: PublishEcrOptions,
   version: string,
 ): Promise<string> {
   const request = toBuildCommandRequest(opts, version);
@@ -33,17 +32,15 @@ export async function buildDockerImage(
 }
 
 function toBuildCommandRequest(
-  opts: Options,
+  opts: PublishEcrOptions,
   version: string,
 ): BuildCommandRequest {
-  const buildContext = opts.context;
   const imageTag = `${opts.repo}:${version}`;
-  return {buildContext, imageTag, version, dockerArgs: opts.dockerArgs};
+  return {imageTag, version, dockerArgs: opts.dockerArgs};
 }
 
 function toDockerBuildCommand({
   imageTag,
-  buildContext,
   version,
   dockerArgs,
 }: BuildCommandRequest): string {
@@ -57,7 +54,5 @@ function toDockerBuildCommand({
   if (dockerArgs && dockerArgs.length > 0) {
     baseArgs.push(...dockerArgs);
   }
-  // Add build context last
-  baseArgs.push(buildContext);
   return baseArgs.join(" ");
 }

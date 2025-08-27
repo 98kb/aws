@@ -1,6 +1,6 @@
 {
   "name": "@98kb/ecr-publisher",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A CLI tool to version, build, and publish Docker images to AWS ECR (Elastic Container Registry).",
   "license": "MIT",
   "author": "dsfx3d",
@@ -21,7 +21,8 @@
     "build:tsup": "tsup",
     "typecheck": "tsc --noEmit",
     "dev": "pnpx tsx src/bin.ts",
-    "build": "pnpm build:tsup && pnpm typecheck"
+    "build": "pnpm build:tsup && pnpm typecheck",
+    "prepublish": "pnpm build"
   },
   "packageManager": "pnpm@10.11.0",
   "dependencies": {

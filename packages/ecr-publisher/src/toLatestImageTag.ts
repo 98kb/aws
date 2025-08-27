@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import semver from "semver";
 import {
   type ECRClient,
   type ImageDetail,
@@ -13,10 +14,8 @@ export async function toLatestImageTag(
   const response = await fetchTaggedImagesFromECR(ecr, repositoryName);
   const latestImage = sortImagesByPushDate(response.imageDetails).at(0);
   const latestTag = toImageTag(latestImage?.imageTags);
-  if (latestTag) {
-    console.log(`✅ Repository ${repositoryName} latest tag: ${latestTag}`);
-  } else {
-    console.log(`ℹ️  Repository ${repositoryName} has no tagged images`);
+  if (latestTag === undefined) {
+    console.log(`ℹ️  Repository ${repositoryName} has no semver tagged images`);
   }
   return latestTag;
 }
@@ -49,5 +48,8 @@ function sortImagesByPushDate(imageDetails?: ImageDetail[]): ImageDetail[] {
 }
 
 function toImageTag(imageTags?: ImageDetail["imageTags"]): string | undefined {
-  return imageTags?.sort()?.at(0);
+  return imageTags
+    ?.filter(tag => semver.valid(tag))
+    ?.sort()
+    .at(0);
 }

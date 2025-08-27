@@ -4,5 +4,5 @@ export type Options = {
   bump: "patch" | "minor" | "major";
   dryRun?: boolean;
   dockerArgs?: string[];
-  context?: string;
+  context: string;
 };

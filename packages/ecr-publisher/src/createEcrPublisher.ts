@@ -28,7 +28,8 @@ export function createEcrPublisher(ecr: ECRClient) {
       context.ecr = ecr;
       context.options = options;
       await ensureECRRepo(context);
-      context.currentVersion = (await toLatestImageTag(context)) ?? "0.0.0";
+      context.currentVersion =
+        options.versionPrefix + ((await toLatestImageTag(context)) ?? "0.0.0");
       context.newVersion = bumpVersion(context);
       await applyHooks(preBuildHooks);
       const localImageTag = await buildDockerImage(context);

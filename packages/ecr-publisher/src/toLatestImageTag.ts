@@ -18,7 +18,7 @@ export async function toLatestImageTag({
   if (latestTag === undefined) {
     console.log(`ℹ️  Repository ${options.repo} has no semver tagged images`);
   }
-  return options.versionPrefix + latestTag;
+  return latestTag;
 }
 
 async function fetchTaggedImagesFromECR(

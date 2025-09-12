@@ -6,18 +6,19 @@ import {
   type DescribeImagesCommandOutput,
   DescribeImagesCommand,
 } from "@aws-sdk/client-ecr";
+import type {Context} from "./Context";
 
-export async function toLatestImageTag(
-  ecr: ECRClient,
-  repositoryName: string,
-): Promise<string | undefined> {
-  const response = await fetchTaggedImagesFromECR(ecr, repositoryName);
+export async function toLatestImageTag({
+  ecr,
+  options,
+}: Context): Promise<string | undefined> {
+  const response = await fetchTaggedImagesFromECR(ecr, options.repo);
   const latestImage = sortImagesByPushDate(response.imageDetails).at(0);
   const latestTag = toImageTag(latestImage?.imageTags);
   if (latestTag === undefined) {
-    console.log(`ℹ️  Repository ${repositoryName} has no semver tagged images`);
+    console.log(`ℹ️  Repository ${options.repo} has no semver tagged images`);
   }
-  return latestTag;
+  return options.versionPrefix + latestTag;
 }
 
 async function fetchTaggedImagesFromECR(

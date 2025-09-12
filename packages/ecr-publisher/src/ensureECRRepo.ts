@@ -1,14 +1,13 @@
 import ora from "ora";
-import {type ECRClient} from "@aws-sdk/client-ecr";
-import type {PublishEcrOptions} from "./PublishEcrOptions";
 import {checkEcrRepoExists} from "./checkEcrRepoExists";
 import {createEcrRepo} from "./createEcrRepo";
+import type {Context} from "./Context";
 
-export async function ensureECRRepo(ecr: ECRClient, opts: PublishEcrOptions) {
+export async function ensureECRRepo({ecr, options}: Context) {
   const spinner = ora("Checking ECR repo...").start();
-  const repoExists = await checkEcrRepoExists(ecr, opts.repo);
+  const repoExists = await checkEcrRepoExists(ecr, options.repo);
   spinner.stop();
   if (!repoExists) {
-    await createEcrRepo(ecr, opts.repo);
+    await createEcrRepo(ecr, options.repo);
   }
 }

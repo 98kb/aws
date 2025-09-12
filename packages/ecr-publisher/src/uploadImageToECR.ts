@@ -7,20 +7,19 @@ import {printCommand} from "./printCommand";
 import {promptConfirmOrExit} from "./promptConfirmOrExit";
 import {executeCommand} from "./executeCommand";
 import chalk from "chalk";
+import type {Context} from "./Context";
 
 export async function uploadImageToECR(
-  ecr: ECRClient,
+  {ecr, options, newVersion}: Context,
   localImageTag: string,
-  repoName: string,
-  version: string,
 ): Promise<string> {
   const {token, registryUrl} = await getECRAuth(ecr);
   await dockerLogin(token, registryUrl);
   const ecrImageTag = await tagImageForECR(
     localImageTag,
     registryUrl,
-    repoName,
-    version,
+    options.repo,
+    newVersion,
   );
   await pushImageToECR(ecrImageTag);
   console.log(

@@ -3,6 +3,7 @@ import type {PublishEcrOptions} from "./PublishEcrOptions";
 import {promptConfirmOrExit} from "./promptConfirmOrExit";
 import {printCommand} from "./printCommand";
 import {executeCommand} from "./executeCommand";
+import type {Context} from "./Context";
 
 type BuildCommandRequest = {
   imageTag: string;
@@ -18,11 +19,11 @@ type BuildCommandRequest = {
  * @param version - Version tag for the image
  * @returns Promise<string> - The image tag of the built image
  */
-export async function buildDockerImage(
-  opts: PublishEcrOptions,
-  version: string,
-): Promise<string> {
-  const request = toBuildCommandRequest(opts, version);
+export async function buildDockerImage({
+  options,
+  newVersion,
+}: Context): Promise<string> {
+  const request = toBuildCommandRequest(options, newVersion);
   const command = toDockerBuildCommand(request);
   printCommand(command);
   await promptConfirmOrExit("Do you want to build the Docker image?");

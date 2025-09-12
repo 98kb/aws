@@ -21,6 +21,7 @@ export function createEcrPublisher(ecr: ECRClient) {
   return {
     beforeBuild(fn: Hook) {
       preBuildHooks.push(fn);
+      return this;
     },
     // eslint-disable-next-line max-statements
     publish: async (options: PublishEcrOptions) => {

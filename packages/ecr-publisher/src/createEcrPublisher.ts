@@ -23,16 +23,18 @@ export function createEcrPublisher(ecr: ECRClient) {
       return this;
     },
 
+    // eslint-disable-next-line max-statements
     publish: async (options: PublishEcrOptions) => {
+      const self = this as unknown;
       context.ecr = ecr;
       context.options = options;
       await ensureECRRepo(context);
       context.currentVersion = (await toLatestImageTag(context)) ?? "0.0.0";
       context.newVersion = options.versionPrefix + bumpVersion(context);
       const localImageTag = await buildDockerImage(context, {
-        preBuild: applyHooks.bind(null, preBuildHooks),
+        preBuild: applyHooks.bind(self, preBuildHooks),
       });
       await uploadImageToECR(context, localImageTag);
     },
-  };
+  } as const;
 }

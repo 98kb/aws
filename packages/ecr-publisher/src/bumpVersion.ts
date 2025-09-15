@@ -9,7 +9,7 @@ export function bumpVersion({currentVersion, options}: Context): string {
   }
   // eslint-disable-next-line no-console
   console.log(
-    `🔧 ${chalk.magenta("Bumping version:")} ${chalk.blueBright(currentVersion)} → ${chalk.green(options.versionPrefix + newVersion)}`,
+    `🔧 ${chalk.magenta("Bumping version:")} ${chalk.blueBright(currentVersion)} → ${chalk.green(options.versionPrefix + newVersion) + ` (${options.bump})`}`,
   );
   return newVersion;
 }

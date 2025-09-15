@@ -12,9 +12,15 @@ export class EcrPublisher {
   context: Context = {} as Context;
 
   readonly preBuildHooks: Hook[] = [];
+  readonly postVersionBumpHooks: Hook[] = [];
 
   constructor(ecr: ECRClient) {
     this.context.ecr = ecr;
+  }
+
+  afterVersionBump(fn: Hook): EcrPublisher {
+    this.postVersionBumpHooks.push(fn);
+    return this;
   }
 
   beforeBuild(fn: Hook): EcrPublisher {
@@ -28,6 +34,7 @@ export class EcrPublisher {
     this.context.currentVersion =
       (await toLatestImageTag(this.context)) ?? "0.0.0";
     this.context.newVersion = options.versionPrefix + bumpVersion(this.context);
+    await this.applyHooks(this.postVersionBumpHooks);
     const localImageTag = await buildDockerImage(this);
     await uploadImageToECR(this.context, localImageTag);
   }

@@ -7,8 +7,7 @@ import {buildDockerImage} from "./buildDockerImage";
 import {uploadImageToECR} from "./uploadImageToECR";
 import type {PublishEcrOptions} from "./PublishEcrOptions";
 import type {Context} from "./Context";
-
-type Hook = (context: Context) => Promise<Context> | Context;
+import type {Hook} from "./Hook";
 
 export function createEcrPublisher(ecr: ECRClient) {
   let context = {} as Context;
@@ -23,15 +22,16 @@ export function createEcrPublisher(ecr: ECRClient) {
       preBuildHooks.push(fn);
       return this;
     },
-    // eslint-disable-next-line max-statements
+
     publish: async (options: PublishEcrOptions) => {
       context.ecr = ecr;
       context.options = options;
       await ensureECRRepo(context);
       context.currentVersion = (await toLatestImageTag(context)) ?? "0.0.0";
       context.newVersion = options.versionPrefix + bumpVersion(context);
-      await applyHooks(preBuildHooks);
-      const localImageTag = await buildDockerImage(context);
+      const localImageTag = await buildDockerImage(context, {
+        preBuild: applyHooks.bind(null, preBuildHooks),
+      });
       await uploadImageToECR(context, localImageTag);
     },
   };

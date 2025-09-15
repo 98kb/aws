@@ -19,14 +19,16 @@ type BuildCommandRequest = {
  * @param version - Version tag for the image
  * @returns Promise<string> - The image tag of the built image
  */
-export async function buildDockerImage({
-  options,
-  newVersion,
-}: Context): Promise<string> {
+// eslint-disable-next-line max-statements
+export async function buildDockerImage(
+  {options, newVersion}: Context,
+  hooks: {preBuild: () => Promise<void> | void},
+): Promise<string> {
   const request = toBuildCommandRequest(options, newVersion);
   const command = toDockerBuildCommand(request);
   printCommand(command);
   await promptConfirmOrExit("Do you want to build the Docker image?");
+  await hooks.preBuild();
   await executeCommand(command);
   console.log(`\n✅ Successfully built Docker image: ${request.imageTag}`);
   return request.imageTag;

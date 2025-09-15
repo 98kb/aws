@@ -4,7 +4,7 @@ export async function promptConfirmOrExit(message: string) {
   const {confirm} = await prompts({
     type: "confirm",
     name: "confirm",
-    message: `\n ${message}`,
+    message,
     initial: true,
   });
   if (!confirm) {

@@ -12,7 +12,7 @@ export async function createEcrRepo(ecr: ECRClient, repo: string) {
   });
 
   if (shouldCreate) {
-    const spinner = ora(chalk.gray(`🚀 Creating ${repo}...`)).start();
+    const spinner = ora(`🚀 Creating ${repo}...`).start();
     try {
       await ecr.send(new CreateRepositoryCommand({repositoryName: repo}));
     } finally {

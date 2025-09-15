@@ -4,6 +4,7 @@ import {promptConfirmOrExit} from "./promptConfirmOrExit";
 import {printCommand} from "./printCommand";
 import {executeCommand} from "./executeCommand";
 import type {Context} from "./Context";
+import type {EcrPublisher} from "./EcrPublisher";
 
 type BuildCommandRequest = {
   imageTag: string;
@@ -20,15 +21,15 @@ type BuildCommandRequest = {
  * @returns Promise<string> - The image tag of the built image
  */
 // eslint-disable-next-line max-statements
-export async function buildDockerImage(
-  {options, newVersion}: Context,
-  hooks: {preBuild: () => Promise<void> | void},
-): Promise<string> {
-  const request = toBuildCommandRequest(options, newVersion);
+export async function buildDockerImage(publisher: EcrPublisher): Promise<string> {
+  const request = toBuildCommandRequest(
+    publisher.context.options,
+    publisher.context.newVersion,
+  );
   const command = toDockerBuildCommand(request);
   printCommand(command);
   await promptConfirmOrExit("Do you want to build the Docker image?");
-  await hooks.preBuild();
+  await publisher.applyHooks(publisher.preBuildHooks);
   await executeCommand(command);
   console.log(`\n✅ Successfully built Docker image: ${request.imageTag}`);
   return request.imageTag;

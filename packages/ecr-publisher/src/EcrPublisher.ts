@@ -31,10 +31,7 @@ export class EcrPublisher {
   async publish(options: PublishEcrOptions): Promise<void> {
     this.context.options = options;
     await ensureECRRepo(this.context);
-    this.context.currentVersion =
-      (await toLatestImageTag(this.context)) ?? "0.0.0";
-    this.context.newVersion = options.versionPrefix + bumpVersion(this.context);
-    await this.applyHooks(this.postVersionBumpHooks);
+    await this.setNewVersion();
     const localImageTag = await buildDockerImage(this);
     await uploadImageToECR(this.context, localImageTag);
   }
@@ -43,5 +40,17 @@ export class EcrPublisher {
     for await (const hook of hooks) {
       this.context = await hook(this.context);
     }
+  }
+
+  private async setNewVersion(): Promise<void> {
+    if (this.context.options.overrideVersion) {
+      this.context.newVersion = this.context.options.overrideVersion;
+    } else {
+      this.context.currentVersion =
+        (await toLatestImageTag(this.context)) ?? "0.0.0";
+      this.context.newVersion =
+        this.context.options.versionPrefix + bumpVersion(this.context);
+    }
+    await this.applyHooks(this.postVersionBumpHooks);
   }
 }

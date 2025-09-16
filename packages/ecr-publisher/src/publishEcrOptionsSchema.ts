@@ -6,4 +6,5 @@ export const publishEcrOptionsSchema = z.object({
   bump: z.enum(["patch", "minor", "major"]),
   dockerArgs: z.string().array().default([]),
   versionPrefix: z.string().optional().default(""),
+  overrideVersion: z.string().optional(),
 });

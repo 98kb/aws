@@ -7,6 +7,7 @@ import {toLatestImageTag} from "./toLatestImageTag";
 import {bumpVersion} from "./bumpVersion";
 import {buildDockerImage} from "./buildDockerImage";
 import {uploadImageToECR} from "./uploadImageToECR";
+import chalk from "chalk";
 
 export class EcrPublisher {
   context: Context = {} as Context;
@@ -45,6 +46,10 @@ export class EcrPublisher {
   private async setNewVersion(): Promise<void> {
     if (this.context.options.overrideVersion) {
       this.context.newVersion = this.context.options.overrideVersion;
+      // eslint-disable-next-line no-console
+      console.log(
+        `🔧 ${chalk.magenta("Version:")} ${chalk.green(this.context.newVersion)} (override)`,
+      );
     } else {
       this.context.currentVersion =
         (await toLatestImageTag(this.context)) ?? "0.0.0";

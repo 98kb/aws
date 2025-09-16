@@ -7,13 +7,14 @@ import {
   DescribeImagesCommand,
 } from "@aws-sdk/client-ecr";
 import type {Context} from "./Context";
+import {sortImagesBySemver} from "./sortImagesBySemver";
 
 export async function toLatestImageTag({
   ecr,
   options,
 }: Context): Promise<string | undefined> {
   const response = await fetchTaggedImagesFromECR(ecr, options.repo);
-  const latestImage = sortImagesByPushDate(response.imageDetails).at(0);
+  const latestImage = sortImages(response.imageDetails).at(0);
   const latestTag = toImageTag(latestImage?.imageTags);
   if (latestTag === undefined) {
     console.log(`ℹ️  Repository ${options.repo} has no semver tagged images`);
@@ -28,7 +29,7 @@ async function fetchTaggedImagesFromECR(
   return ecr.send(
     new DescribeImagesCommand({
       repositoryName,
-      maxResults: 100,
+      maxResults: 1000,
       filter: {
         tagStatus: "TAGGED",
       },
@@ -36,16 +37,15 @@ async function fetchTaggedImagesFromECR(
   );
 }
 
-function sortImagesByPushDate(imageDetails?: ImageDetail[]): ImageDetail[] {
-  return (
-    imageDetails
-      ?.filter(image => image.imageTags && image.imageTags.length > 0)
-      .sort((a, b) => {
-        const dateA = a.imagePushedAt ? new Date(a.imagePushedAt).getTime() : 0;
-        const dateB = b.imagePushedAt ? new Date(b.imagePushedAt).getTime() : 0;
-        return dateB - dateA;
-      }) ?? []
-  );
+function sortImages(imageDetails: ImageDetail[] = []): ImageDetail[] {
+  const taggedImages = imageDetails
+    ?.filter(detail => detail.imageDigest)
+    .map(detail => ({
+      ...detail,
+      imageDigest: detail.imageDigest!,
+      imageTags: detail.imageTags ?? [],
+    }));
+  return sortImagesBySemver(taggedImages);
 }
 
 function toImageTag(imageTags?: ImageDetail["imageTags"]): string | undefined {

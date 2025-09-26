@@ -14,6 +14,7 @@ export class EcrPublisher {
 
   readonly preBuildHooks: Hook[] = [];
   readonly postVersionBumpHooks: Hook[] = [];
+  readonly postBuildHooks: Hook[] = [];
 
   constructor(ecr: ECRClient) {
     this.context.ecr = ecr;
@@ -26,6 +27,11 @@ export class EcrPublisher {
 
   beforeBuild(fn: Hook): EcrPublisher {
     this.preBuildHooks.push(fn);
+    return this;
+  }
+
+  afterBuild(fn: Hook): EcrPublisher {
+    this.postBuildHooks.push(fn);
     return this;
   }
 
@@ -53,8 +59,7 @@ export class EcrPublisher {
     } else {
       this.context.currentVersion =
         (await toLatestImageTag(this.context)) ?? "0.0.0";
-      this.context.newVersion =
-        this.context.options.versionPrefix + bumpVersion(this.context);
+      this.context.newVersion = `${this.context.options.versionPrefix}${bumpVersion(this.context)}`;
     }
     await this.applyHooks(this.postVersionBumpHooks);
   }

@@ -21,6 +21,7 @@ new Command()
   )
   .action(async (opts: PublishEcrOptions) => {
     try {
+      opts["versionPrefix"] ??= "";
       publishEcrOptionsSchema.parse(opts);
       const ecr = new ECRClient({region: opts.region});
       await createEcrPublisher(ecr).publish(opts);

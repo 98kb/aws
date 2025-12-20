@@ -8,6 +8,7 @@ import {bumpVersion} from "./bumpVersion";
 import {buildDockerImage} from "./buildDockerImage";
 import {uploadImageToECR} from "./uploadImageToECR";
 import chalk from "chalk";
+import type {PublishResult} from "./PublishResult";
 
 export class EcrPublisher {
   context: Context = {} as Context;
@@ -35,12 +36,13 @@ export class EcrPublisher {
     return this;
   }
 
-  async publish(options: PublishEcrOptions): Promise<void> {
+  async publish(options: PublishEcrOptions): Promise<PublishResult> {
     this.context.options = options;
     await ensureECRRepo(this.context);
     await this.setNewVersion();
     const localImageTag = await buildDockerImage(this);
     await uploadImageToECR(this.context, localImageTag);
+    return this.toPublishResult();
   }
 
   async applyHooks(hooks: Hook[]): Promise<void> {
@@ -58,9 +60,17 @@ export class EcrPublisher {
       );
     } else {
       this.context.currentVersion =
-        (await toLatestImageTag(this.context)) ?? "0.0.0";
+        (await toLatestImageTag(this.context)) ??
+        `${this.context.options.versionPrefix}0.0.0`;
       this.context.newVersion = `${this.context.options.versionPrefix}${bumpVersion(this.context)}`;
     }
     await this.applyHooks(this.postVersionBumpHooks);
+  }
+
+  private toPublishResult(): PublishResult {
+    return {
+      previousVersion: this.context.currentVersion,
+      newVersion: this.context.newVersion,
+    };
   }
 }

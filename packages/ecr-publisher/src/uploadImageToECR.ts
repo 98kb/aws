@@ -37,7 +37,8 @@ async function getECRAuth(ecr: ECRClient) {
   const token = Buffer.from(authData.authorizationToken!, "base64").toString(
     "utf-8",
   );
-  return {token, registryUrl: authData.proxyEndpoint!};
+  const registryUrl = authData.proxyEndpoint!.replace(/^https?:\/\//, "");
+  return {token, registryUrl};
 }
 
 async function dockerLogin(token: string, registryUrl: string): Promise<void> {

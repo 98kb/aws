@@ -44,7 +44,13 @@ async function getECRAuth(ecr: ECRClient) {
 async function dockerLogin(token: string, registryUrl: string): Promise<void> {
   console.log("\n🔑 Logging into Docker with ECR credentials...");
   const [, password] = token.split(":");
-  const loginCommand = `echo "${password}" | docker login --username AWS --password-stdin ${registryUrl}`;
+
+  // Cross-platform command: Windows uses 'echo.' differently, so we use a more compatible approach
+  const isWindows = process.platform === "win32";
+  const loginCommand = isWindows
+    ? `powershell -Command "echo '${password}' | docker login --username AWS --password-stdin ${registryUrl}"`
+    : `echo "${password}" | docker login --username AWS --password-stdin ${registryUrl}`;
+
   await executeCommand(loginCommand);
 }
 

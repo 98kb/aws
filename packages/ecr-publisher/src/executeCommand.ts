@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import {spawn} from "child_process";
+import spawn from "cross-spawn";
 
 export async function executeCommand(command: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -33,7 +33,10 @@ function isDockerPermissionError(error: Error): boolean {
 function isDockerNotFoundError(error: Error): boolean {
   return (
     error.message.includes("command not found") ||
-    error.message.includes("docker: not found")
+    error.message.includes("docker: not found") ||
+    error.message.includes(
+      "is not recognized as an internal or external command",
+    )
   );
 }
 

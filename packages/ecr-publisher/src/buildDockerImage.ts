@@ -59,9 +59,11 @@ function toDockerBuildCommand({
     "--label",
     `built-at=${new Date().toISOString()}`,
   ];
-  // Add custom docker arguments if provided
+  // Add custom docker arguments if provided.
+  // Each entry may be a space-separated string (e.g. "--build-arg KEY=VAL"),
+  // so split by whitespace to match the old shell-splitting behaviour.
   if (dockerArgs && dockerArgs.length > 0) {
-    args.push(...dockerArgs);
+    args.push(...dockerArgs.flatMap(arg => arg.split(/\s+/)));
   }
   return {cmd: "docker", args};
 }

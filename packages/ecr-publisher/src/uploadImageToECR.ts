@@ -6,6 +6,7 @@ import {
 import {printCommand} from "./printCommand";
 import {promptConfirmOrExit} from "./promptConfirmOrExit";
 import {executeCommand} from "./executeCommand";
+import {executeCommandWithStdin} from "./executeCommandWithStdin";
 import chalk from "chalk";
 import type {Context} from "./Context";
 
@@ -44,14 +45,11 @@ async function getECRAuth(ecr: ECRClient) {
 async function dockerLogin(token: string, registryUrl: string): Promise<void> {
   console.log("\n🔑 Logging into Docker with ECR credentials...");
   const [, password] = token.split(":");
-
-  // Cross-platform command: Windows uses 'echo.' differently, so we use a more compatible approach
-  const isWindows = process.platform === "win32";
-  const loginCommand = isWindows
-    ? `powershell -Command "echo '${password}' | docker login --username AWS --password-stdin ${registryUrl}"`
-    : `echo "${password}" | docker login --username AWS --password-stdin ${registryUrl}`;
-
-  await executeCommand(loginCommand);
+  await executeCommandWithStdin(
+    "docker",
+    ["login", "--username", "AWS", "--password-stdin", registryUrl],
+    password,
+  );
 }
 
 async function tagImageForECR(
@@ -64,16 +62,14 @@ async function tagImageForECR(
   const registryHost = registryUrl.replace(/^https?:\/\//, "");
   const ecrImageTag = `${registryHost}/${repoName}:${version}`;
   console.log(`🏷️  Tagging image for ECR: ${localImageTag} -> ${ecrImageTag}`);
-  const tagCommand = `docker tag ${localImageTag} ${ecrImageTag}`;
-  printCommand(tagCommand);
-  await executeCommand(tagCommand);
+  printCommand(`docker tag ${localImageTag} ${ecrImageTag}`);
+  await executeCommand("docker", ["tag", localImageTag, ecrImageTag]);
   return ecrImageTag;
 }
 
 async function pushImageToECR(ecrImageTag: string): Promise<void> {
   console.log(`📤 Pushing image to ECR: ${ecrImageTag}`);
-  const pushCommand = `docker push ${ecrImageTag}`;
-  printCommand(pushCommand);
+  printCommand(`docker push ${ecrImageTag}`);
   await promptConfirmOrExit("Do you want to push the Docker image to ECR?");
-  await executeCommand(pushCommand);
+  await executeCommand("docker", ["push", ecrImageTag]);
 }

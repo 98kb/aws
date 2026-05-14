@@ -27,11 +27,11 @@ export async function buildDockerImage(
     publisher.context.options,
     publisher.context.newVersion,
   );
-  const command = toDockerBuildCommand(request);
-  printCommand(command);
+  const {cmd, args} = toDockerBuildCommand(request);
+  printCommand([cmd, ...args].join(" "));
   await promptConfirmOrExit("Do you want to build the Docker image?");
   await publisher.applyHooks(publisher.preBuildHooks);
-  await executeCommand(command);
+  await executeCommand(cmd, args);
   await publisher.applyHooks(publisher.postBuildHooks);
   console.log(`\n✅ Successfully built Docker image: ${request.imageTag}`);
   return request.imageTag;
@@ -49,16 +49,19 @@ function toDockerBuildCommand({
   imageTag,
   version,
   dockerArgs,
-}: BuildCommandRequest): string {
-  const baseArgs = [
-    "docker build",
-    `-t ${imageTag}`,
-    `--label version=${version}`,
-    `--label built-at=${new Date().toISOString()}`,
+}: BuildCommandRequest): {cmd: string; args: string[]} {
+  const args = [
+    "build",
+    "-t",
+    imageTag,
+    "--label",
+    `version=${version}`,
+    "--label",
+    `built-at=${new Date().toISOString()}`,
   ];
   // Add custom docker arguments if provided
   if (dockerArgs && dockerArgs.length > 0) {
-    baseArgs.push(...dockerArgs);
+    args.push(...dockerArgs);
   }
-  return baseArgs.join(" ");
+  return {cmd: "docker", args};
 }

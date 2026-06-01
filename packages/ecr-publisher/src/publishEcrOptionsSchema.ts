@@ -7,4 +7,6 @@ export const publishEcrOptionsSchema = z.object({
   dockerArgs: z.string().array().default([]),
   versionPrefix: z.string().default(""),
   overrideVersion: z.string().optional(),
+  public: z.boolean().default(false),
+  alias: z.string().optional(),
 });

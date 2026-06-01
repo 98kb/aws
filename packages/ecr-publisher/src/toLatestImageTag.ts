@@ -6,20 +6,66 @@ import {
   type DescribeImagesCommandOutput,
   DescribeImagesCommand,
 } from "@aws-sdk/client-ecr";
+import {
+  type ECRPUBLICClient,
+  type ImageDetail as PublicImageDetail,
+  type DescribeImagesCommandOutput as DescribePublicImagesCommandOutput,
+  DescribeImagesCommand as DescribePublicImagesCommand,
+} from "@aws-sdk/client-ecr-public";
 import type {Context} from "./Context";
 import {sortImagesBySemver} from "./sortImagesBySemver";
 
 export async function toLatestImageTag({
   ecr,
+  ecrPublic,
   options,
 }: Context): Promise<string | undefined> {
-  const response = await fetchTaggedImagesFromECR(ecr, options.repo);
+  if (options.public) {
+    return toLatestPublicImageTag(ecrPublic!, options.repo);
+  }
+  if (!ecr) throw new Error("ECRClient is required for private ECR");
+  return toLatestPrivateImageTag(ecr, options.repo);
+}
+
+async function toLatestPublicImageTag(
+  ecrPublic: ECRPUBLICClient,
+  repositoryName: string,
+): Promise<string | undefined> {
+  const response = await fetchTaggedImagesFromPublicECR(
+    ecrPublic,
+    repositoryName,
+  );
+  const taggedImages = sortImages(response.imageDetails as PublicImageDetail[]);
+  const latestTag = toImageTag(taggedImages.at(0)?.imageTags);
+  if (latestTag === undefined) {
+    console.log(`ℹ️  Repository ${repositoryName} has no semver tagged images`);
+  }
+  return latestTag;
+}
+
+async function toLatestPrivateImageTag(
+  ecr: ECRClient,
+  repositoryName: string,
+): Promise<string | undefined> {
+  const response = await fetchTaggedImagesFromECR(ecr, repositoryName);
   const latestImage = sortImages(response.imageDetails).at(0);
   const latestTag = toImageTag(latestImage?.imageTags);
   if (latestTag === undefined) {
-    console.log(`ℹ️  Repository ${options.repo} has no semver tagged images`);
+    console.log(`ℹ️  Repository ${repositoryName} has no semver tagged images`);
   }
   return latestTag;
+}
+
+async function fetchTaggedImagesFromPublicECR(
+  ecrPublic: ECRPUBLICClient,
+  repositoryName: string,
+): Promise<DescribePublicImagesCommandOutput> {
+  return ecrPublic.send(
+    new DescribePublicImagesCommand({
+      repositoryName,
+      maxResults: 1000,
+    }),
+  );
 }
 
 async function fetchTaggedImagesFromECR(

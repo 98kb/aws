@@ -1,6 +1,6 @@
 {
   "name": "@98kb/ecr-publisher",
-  "version": "2.5.6",
+  "version": "2.6.0",
   "description": "A CLI tool to version, build, and publish Docker images to AWS ECR (Elastic Container Registry).",
   "license": "MIT",
   "type": "commonjs",
@@ -22,11 +22,14 @@
     "build:tsup": "tsup",
     "typecheck": "tsc --noEmit",
     "dev": "pnpx tsx src/bin.ts",
-    "build": "pnpm build:tsup && pnpm typecheck"
+    "build": "pnpm build:tsup && pnpm typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
     "@aws-sdk/client-ecr": "^3.835.0",
+    "@aws-sdk/client-ecr-public": "^3.835.0",
     "cross-spawn": "^7.0.6",
     "chalk": "^5.6.0",
     "commander": "^14.0.0",
@@ -46,9 +49,11 @@
     "dotenv": "^16.5.0",
     "pg": "^8.16.0",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
   },
   "peerDependencies": {
-    "@aws-sdk/client-ecr": "^3.835.0"
+    "@aws-sdk/client-ecr": "^3.835.0",
+    "@aws-sdk/client-ecr-public": "^3.835.0"
   }
 }

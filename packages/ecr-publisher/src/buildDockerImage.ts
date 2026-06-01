@@ -3,7 +3,7 @@ import type {PublishEcrOptions} from "./PublishEcrOptions";
 import {promptConfirmOrExit} from "./promptConfirmOrExit";
 import {printCommand} from "./printCommand";
 import {executeCommand} from "./executeCommand";
-import type {EcrPublisher} from "./EcrPublisher";
+import type {BaseEcrPublisher} from "./BaseEcrPublisher";
 
 type BuildCommandRequest = {
   imageTag: string;
@@ -21,7 +21,7 @@ type BuildCommandRequest = {
  */
 // eslint-disable-next-line max-statements
 export async function buildDockerImage(
-  publisher: EcrPublisher,
+  publisher: BaseEcrPublisher,
 ): Promise<string> {
   const request = toBuildCommandRequest(
     publisher.context.options,

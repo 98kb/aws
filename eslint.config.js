@@ -19,4 +19,12 @@ export default defineConfig([
       camelcase: "off",
     },
   },
+  {
+    files: ["packages/ecr-publisher/**/*.test.ts"],
+    rules: {
+      complexity: "off",
+      "max-nested-callbacks": "off",
+      "max-statements": "off",
+    },
+  },
 ]);

@@ -13,6 +13,7 @@ import {
   toPublisherSettings,
 } from "./toPublisherSettings";
 import {exitCodeFor} from "./exitCodeFor";
+import {isEcrPublisherError} from "./isEcrPublisherError";
 
 export function cli() {
   return new Command()
@@ -63,7 +64,7 @@ async function runPublish(opts: PublishEcrOptions & CliSettingsFlags) {
 }
 
 function printError(error: unknown) {
-  if (exitCodeFor(error) === 0) {
+  if (isEcrPublisherError(error, "CANCELLED")) {
     console.log(`🚫 ${(error as Error).message}`);
   } else {
     console.error("❌ Error:", (error as Error).message);

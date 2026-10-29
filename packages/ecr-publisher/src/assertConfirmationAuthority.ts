@@ -1,4 +1,5 @@
 import {ConfirmationRequiredError} from "./ConfirmationRequiredError";
+import {canPrompt} from "./canPrompt";
 import type {ResolvedPublisherSettings} from "./normalizePublisherSettings";
 
 /**
@@ -16,8 +17,4 @@ export function assertConfirmationAuthority(
 
 function isPreAnswered({confirm, yes}: ResolvedPublisherSettings): boolean {
   return confirm !== undefined || yes;
-}
-
-function canPrompt({interactive}: ResolvedPublisherSettings): boolean {
-  return interactive && process.stdin.isTTY === true;
 }

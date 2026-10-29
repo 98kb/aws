@@ -4,19 +4,25 @@ import {CommandFailedError} from "./CommandFailedError";
 import type {CommandRun, CommandRunner} from "./CommandRunner";
 import {printDockerGuidance} from "./printDockerGuidance";
 
-type Outcome = {stdout: string} | CommandFailedError;
-
-export const defaultRunner: CommandRunner = async run =>
+/**
+ * Runs one command. The promise settles once: a spawn `error` followed by
+ * `close` keeps the first outcome, because later resolve/reject calls are
+ * ignored.
+ */
+export const defaultRunner: CommandRunner = run =>
   new Promise((resolve, reject) => {
-    const settle = settleOnce(resolve, reject);
     const child = spawn(run.command, run.args, {stdio: stdioFor(run)});
     const stdout = collectStdout(child);
     child.on("error", (error: NodeJS.ErrnoException) =>
-      settle(spawnFailure(run, error)),
+      reject(spawnFailure(run, error)),
     );
-    child.on("close", code =>
-      settle(code === 0 ? {stdout: stdout()} : exitFailure(run, code)),
-    );
+    child.on("close", code => {
+      if (code === 0) {
+        resolve({stdout: stdout()});
+      } else {
+        reject(exitFailure(run, code));
+      }
+    });
     writeInput(child, run.input);
   });
 
@@ -32,24 +38,6 @@ function stdinFor({
 
 function stdioFor(run: CommandRun): StdioOptions {
   return [stdinFor(run), run.captureStdout ? "pipe" : "inherit", "inherit"];
-}
-
-function settleOnce(
-  resolve: (value: {stdout: string}) => void,
-  reject: (error: CommandFailedError) => void,
-): (outcome: Outcome) => void {
-  let settled = false;
-  return outcome => {
-    if (settled) {
-      return;
-    }
-    settled = true;
-    if (outcome instanceof CommandFailedError) {
-      reject(outcome);
-    } else {
-      resolve(outcome);
-    }
-  };
 }
 
 function collectStdout(child: ChildProcess): () => string {
@@ -70,7 +58,7 @@ function writeInput(child: ChildProcess, input?: string): void {
   }
 }
 
-function describe({command, args}: CommandRun): string {
+function formatCommand({command, args}: CommandRun): string {
   return [command, ...args].join(" ");
 }
 
@@ -80,14 +68,14 @@ function spawnFailure(
 ): CommandFailedError {
   printDockerGuidance(error.code);
   return new CommandFailedError({
-    command: describe(run),
+    command: formatCommand(run),
     errorCode: error.code ?? "UNKNOWN",
   });
 }
 
 function exitFailure(run: CommandRun, code: number | null): CommandFailedError {
   return new CommandFailedError({
-    command: describe(run),
+    command: formatCommand(run),
     exitCode: code ?? undefined,
   });
 }

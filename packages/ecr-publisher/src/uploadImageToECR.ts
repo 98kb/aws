@@ -25,8 +25,8 @@ export async function uploadImageToECR(
   localImageTag: string,
 ): Promise<{imageTag: string; digest: string}> {
   const ecrImageTag = context.options.public
-    ? await tagImageForPublicECR(context, localImageTag)
-    : await tagImageForPrivateECR(context, localImageTag);
+    ? await loginAndTagPublic(context, localImageTag)
+    : await loginAndTagPrivate(context, localImageTag);
   const digest = await pushImageToECR(context, ecrImageTag);
   console.log(
     chalk.hex("#00FF00")(
@@ -36,7 +36,7 @@ export async function uploadImageToECR(
   return {imageTag: ecrImageTag, digest};
 }
 
-async function tagImageForPublicECR(
+async function loginAndTagPublic(
   {ecrPublic, options, newVersion, settings}: Context,
   localImageTag: string,
 ): Promise<string> {
@@ -48,7 +48,7 @@ async function tagImageForPublicECR(
   return ecrImageTag;
 }
 
-async function tagImageForPrivateECR(
+async function loginAndTagPrivate(
   {ecr, options, newVersion, settings}: Context,
   localImageTag: string,
 ): Promise<string> {

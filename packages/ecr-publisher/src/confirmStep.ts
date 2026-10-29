@@ -5,6 +5,7 @@ import type {ConfirmStep} from "./ConfirmStepName";
 import type {ResolvedPublisherSettings} from "./normalizePublisherSettings";
 import {ConfirmationRequiredError} from "./ConfirmationRequiredError";
 import {PublishCancelledError} from "./PublishCancelledError";
+import {canPrompt} from "./canPrompt";
 
 /**
  * Answers one confirmation in order: the `confirm` callback, `yes` (build and
@@ -40,7 +41,7 @@ function resolveApproval(
   if (isAutoApproved(settings, step)) {
     return Promise.resolve(true);
   }
-  return promptApproves(settings.interactive, step, promptMessage);
+  return promptApproves(settings, step, promptMessage);
 }
 
 async function callbackApproves(
@@ -59,11 +60,11 @@ function isAutoApproved(
 }
 
 function promptApproves(
-  interactive: boolean,
+  settings: ResolvedPublisherSettings,
   step: ConfirmStep,
   message: string,
 ): Promise<boolean> {
-  if (!interactive || !process.stdin.isTTY) {
+  if (!canPrompt(settings)) {
     throw new ConfirmationRequiredError(step);
   }
   return rejectOnStdinEnd(builtInPrompt(message), step);

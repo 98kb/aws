@@ -53,3 +53,8 @@ Thumbs.db
 .env*
 !.env.sample
 .pnpm*
+
+# Compound Engineering local overrides & artifacts
+.compound-engineering/config.local.yaml
+.compound-engineering/artifacts/
+.compound-engineering/eval-runs/

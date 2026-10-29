@@ -1,4 +1,5 @@
 import {type ECRClient, DescribeRepositoriesCommand} from "@aws-sdk/client-ecr";
+import {isRepositoryNotFound} from "./isRepositoryNotFound";
 
 export async function checkEcrRepoExists(
   ecr: ECRClient,
@@ -7,7 +8,8 @@ export async function checkEcrRepoExists(
   try {
     await ecr.send(new DescribeRepositoriesCommand({repositoryNames: [repo]}));
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    if (isRepositoryNotFound(error)) return false;
+    throw error;
   }
 }

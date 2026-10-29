@@ -6,6 +6,10 @@ function makeMockClient(impl: (cmd: unknown) => unknown) {
   return {send: vi.fn().mockImplementation(impl)};
 }
 
+function namedError(name: string): Error {
+  return Object.assign(new Error(`${name} message`), {name});
+}
+
 describe("checkEcrPublicRepoExists", () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -23,9 +27,9 @@ describe("checkEcrPublicRepoExists", () => {
     expect(sentCommand.input).toEqual({repositoryNames: ["my-repo"]});
   });
 
-  it("returns false when the SDK throws (repo not found)", async () => {
+  it("returns false for an error named RepositoryNotFoundException", async () => {
     const client = makeMockClient(() =>
-      Promise.reject(new Error("RepositoryNotFoundException")),
+      Promise.reject(namedError("RepositoryNotFoundException")),
     );
     const result = await checkEcrPublicRepoExists(
       client as never,
@@ -34,11 +38,11 @@ describe("checkEcrPublicRepoExists", () => {
     expect(result).toBe(false);
   });
 
-  it("returns false for any error, not just RepositoryNotFoundException", async () => {
-    const client = makeMockClient(() =>
-      Promise.reject(new Error("AccessDeniedException")),
-    );
-    const result = await checkEcrPublicRepoExists(client as never, "my-repo");
-    expect(result).toBe(false);
+  it("rethrows any other error", async () => {
+    const error = namedError("AccessDeniedException");
+    const client = makeMockClient(() => Promise.reject(error));
+    await expect(
+      checkEcrPublicRepoExists(client as never, "my-repo"),
+    ).rejects.toBe(error);
   });
 });

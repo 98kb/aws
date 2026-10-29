@@ -1,8 +1,7 @@
 /* eslint-disable no-console */
 import type {PublishEcrOptions} from "./PublishEcrOptions";
-import {promptConfirmOrExit} from "./promptConfirmOrExit";
+import {confirmStep} from "./confirmStep";
 import {printCommand} from "./printCommand";
-import {executeCommand} from "./executeCommand";
 import type {BaseEcrPublisher} from "./BaseEcrPublisher";
 
 type BuildCommandRequest = {
@@ -29,9 +28,14 @@ export async function buildDockerImage(
   );
   const {cmd, args} = toDockerBuildCommand(request);
   printCommand([cmd, ...args].join(" "));
-  await promptConfirmOrExit("Do you want to build the Docker image?");
+  await confirmStep(
+    publisher.context,
+    "build",
+    "Do you want to build the Docker image?",
+  );
   await publisher.applyHooks(publisher.preBuildHooks);
-  await executeCommand(cmd, args);
+  const {runner, interactive} = publisher.context.settings;
+  await runner({command: cmd, args, interactive});
   await publisher.applyHooks(publisher.postBuildHooks);
   console.log(`\n✅ Successfully built Docker image: ${request.imageTag}`);
   return request.imageTag;

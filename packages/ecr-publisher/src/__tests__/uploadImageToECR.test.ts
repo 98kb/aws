@@ -4,19 +4,19 @@ import {
   GetAuthorizationTokenCommand as GetPublicAuthorizationTokenCommand,
   DescribeRegistriesCommand,
 } from "@aws-sdk/client-ecr-public";
+import type {CommandRun} from "../CommandRun";
 import type {Context} from "../Context";
+import {normalizePublisherSettings} from "../normalizePublisherSettings";
 import {uploadImageToECR} from "../uploadImageToECR";
 
-vi.mock("../executeCommand", () => ({
-  executeCommand: vi.fn().mockResolvedValue(undefined),
-}));
-vi.mock("../executeCommandWithStdin", () => ({
-  executeCommandWithStdin: vi.fn().mockResolvedValue(undefined),
-}));
-vi.mock("../promptConfirmOrExit", () => ({
-  promptConfirmOrExit: vi.fn().mockResolvedValue(undefined),
-}));
 vi.mock("../printCommand", () => ({printCommand: vi.fn()}));
+
+const DIGEST = `sha256:${"b".repeat(64)}`;
+const runner = vi.fn((run: CommandRun) =>
+  Promise.resolve({
+    stdout: run.args[0] === "push" ? `1.1.0: digest: ${DIGEST} size: 1` : "",
+  }),
+);
 
 const PRIVATE_AUTH_TOKEN = Buffer.from("AWS:password").toString("base64");
 const PUBLIC_AUTH_TOKEN = Buffer.from("AWS:pubpassword").toString("base64");
@@ -58,6 +58,7 @@ function makeContext(
   return {
     currentVersion: "1.0.0",
     newVersion: "1.1.0",
+    settings: normalizePublisherSettings({yes: true, runner}),
     ...overrides,
   } as Context;
 }
@@ -96,7 +97,10 @@ describe("uploadImageToECR — private ECR", () => {
       },
     });
     const result = await uploadImageToECR(ctx, "local-image:latest");
-    expect(result).toBe(`${REGISTRY_HOST}/my-repo:1.1.0`);
+    expect(result).toEqual({
+      imageTag: `${REGISTRY_HOST}/my-repo:1.1.0`,
+      digest: DIGEST,
+    });
   });
 
   it("does not call the public ECR client", async () => {
@@ -135,7 +139,10 @@ describe("uploadImageToECR — public ECR with explicit alias", () => {
       },
     });
     const result = await uploadImageToECR(ctx, "local-image:latest");
-    expect(result).toBe("public.ecr.aws/myalias/my-repo:1.1.0");
+    expect(result).toEqual({
+      imageTag: "public.ecr.aws/myalias/my-repo:1.1.0",
+      digest: DIGEST,
+    });
   });
 
   it("does not call DescribeRegistriesCommand when alias is provided", async () => {
@@ -213,6 +220,6 @@ describe("uploadImageToECR — public ECR without alias (auto-detect)", () => {
       },
     });
     const result = await uploadImageToECR(ctx, "local-image:latest");
-    expect(result).toBe("public.ecr.aws/auto-alias/my-repo:1.1.0");
+    expect(result.imageTag).toBe("public.ecr.aws/auto-alias/my-repo:1.1.0");
   });
 });

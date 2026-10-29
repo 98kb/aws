@@ -16,7 +16,9 @@ vi.mock("../buildDockerImage", () => ({
   buildDockerImage: vi.fn().mockResolvedValue("my-repo:1.1.0"),
 }));
 vi.mock("../uploadImageToECR", () => ({
-  uploadImageToECR: vi.fn().mockResolvedValue("my-repo:1.1.0"),
+  uploadImageToECR: vi
+    .fn()
+    .mockResolvedValue({imageTag: "my-repo:1.1.0", digest: "sha256:abc"}),
 }));
 
 const mockEcr = {} as ECRClient;
@@ -41,14 +43,17 @@ describe("EcrPublisher", () => {
   });
 
   it("forces options.public to false even when caller passes true", async () => {
-    await new EcrPublisher(mockEcr).publish({...BASE_OPTS, public: true});
+    await new EcrPublisher(mockEcr, {yes: true}).publish({
+      ...BASE_OPTS,
+      public: true,
+    });
     expect(vi.mocked(ensureECRRepo).mock.calls[0][0].options.public).toBe(
       false,
     );
   });
 
   it("keeps options.public as false when already false", async () => {
-    await new EcrPublisher(mockEcr).publish(BASE_OPTS);
+    await new EcrPublisher(mockEcr, {yes: true}).publish(BASE_OPTS);
     expect(vi.mocked(ensureECRRepo).mock.calls[0][0].options.public).toBe(
       false,
     );

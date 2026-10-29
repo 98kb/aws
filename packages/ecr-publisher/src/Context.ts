@@ -1,6 +1,7 @@
 import type {ECRClient} from "@aws-sdk/client-ecr";
 import type {ECRPUBLICClient} from "@aws-sdk/client-ecr-public";
 import type {PublishEcrOptions} from "./PublishEcrOptions";
+import type {ResolvedPublisherSettings} from "./normalizePublisherSettings";
 
 export type Context = {
   ecr?: ECRClient;
@@ -8,4 +9,5 @@ export type Context = {
   currentVersion: string;
   newVersion: string;
   options: PublishEcrOptions;
+  settings: ResolvedPublisherSettings;
 };

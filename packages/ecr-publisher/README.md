@@ -7,9 +7,16 @@ A CLI tool to automatically version, build, and publish Docker images to AWS ECR
 The ECR Publisher CLI automates the entire Docker image publishing workflow:
 
 1. **Version Management** - Automatically bumps semantic versions based on existing ECR tags
-2. **Repository Management** - Creates ECR repositories if they don't exist
+2. **Repository Management** - Checks the repository exists; a missing one is created only as `--create-repo` allows (asks by default, never in `--non-interactive` mode unless `--create-repo always`)
 3. **Image Building** - Builds Docker images with proper `--docker-args`
-4. **Publishing** - Uploads and tags images in ECR
+4. **Publishing** - Uploads and tags images in ECR and prints the pushed image digest
+
+## Breaking changes in 3.0.0
+
+- **Errors are thrown instead of calling `process.exit`.** `publish()` rejects with a typed error (see [Errors](#errors)); declining a prompt rejects with `PublishCancelledError`. The CLI still exits 0 on cancellation and 1 on any other error.
+- **`previousVersion` is optional.** `publish()` resolves with `{previousVersion?, newVersion, digest}`; `previousVersion` is absent when `overrideVersion` was used.
+- **Push output is line-based.** `docker push` output is captured to read the digest and echoed line by line, so Docker's live progress bars no longer redraw.
+- **Repository check errors propagate.** Only a repository-not-found response counts as a missing repo; any other error from the existence check (for example `AccessDenied`) now rejects `publish()` instead of triggering repo creation.
 
 ## Prerequisites
 
@@ -54,6 +61,11 @@ ecr-publisher --repo <repository-name> [options] [context]
 | `--bump <type>` | Version bump type: `major`, `minor`, or `patch` | `minor` | `--bump patch` |
 | `--region <region>` | AWS region for ECR | Uses AWS default | `--region us-east-1` |
 | `--docker-args <args...>` | Additional docker build arguments (including dockerfile path) | None | `--docker-args -f Dockerfile --build-arg NODE_ENV=production` |
+| `--yes` | Auto-approve the build and push prompts. Never approves repo creation | `false` | `--yes` |
+| `--non-interactive` | Never prompt. Without `--yes`, fails before any AWS or Docker call | `false` | `--non-interactive` |
+| `--create-repo <policy>` | Missing-repo policy: `prompt`, `always`, or `never` | `prompt` | `--create-repo always` |
+
+On success the CLI prints the pushed version and image digest. Cancelling a prompt exits 0; every other error exits 1.
 
 ## Examples
 
@@ -86,6 +98,13 @@ ecr-publisher --repo my-service \
 ecr-publisher --repo my-service --docker-args -f Dockerfile .
 ```
 
+### CI (headless)
+
+```bash
+# No prompts; fail if the repository does not exist
+ecr-publisher --repo my-service --yes --non-interactive --docker-args -f Dockerfile .
+```
+
 ### Version Management
 
 The tool uses semantic versioning (semver):
@@ -95,6 +114,71 @@ The tool uses semantic versioning (semver):
 - **major** (1.0.0 → 2.0.0) - Breaking changes
 
 If no existing versions are found, it starts with `0.0.0`.
+
+## Library Usage
+
+```ts
+import {ECRClient} from "@aws-sdk/client-ecr";
+import {createEcrPublisher, isEcrPublisherError} from "@98kb/ecr-publisher";
+
+const publisher = createEcrPublisher(new ECRClient({region: "us-east-1"}), {
+  yes: true,
+  interactive: false,
+  createRepo: "never",
+});
+
+try {
+  const {previousVersion, newVersion, digest} = await publisher.publish({
+    repo: "my-service",
+    bump: "patch",
+    dockerArgs: ["-f", "Dockerfile", "."],
+    versionPrefix: "",
+    public: false,
+  });
+  console.log(previousVersion, newVersion, digest);
+} catch (error) {
+  if (isEcrPublisherError(error, "REPO_MISSING")) {
+    // provision the repository first
+  }
+  throw error;
+}
+```
+
+Use `createPublicEcrPublisher` with an `ECRPUBLICClient` for public ECR. `EcrPublisher` and `PublicEcrPublisher` constructors take the same optional settings as their second argument.
+
+### Settings (`PublisherSettings`)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `confirm` | `ConfirmFn` | none | Called as `confirm(message, {step})` with `step` `"create-repo"`, `"build"`, or `"push"`. Return `true` or nothing to proceed, `false` to cancel. Anything it throws propagates unchanged |
+| `yes` | `boolean` | `false` | Auto-approve build and push when no `confirm` is given. Never answers repo creation |
+| `interactive` | `boolean` | `true` | When `false`: never prompts, Docker gets no stdin, spinners print plain lines. No TTY auto-detection |
+| `createRepo` | `CreateRepoPolicy` | `"prompt"` | `"prompt"`, `"always"`, or `"never"` when the repository is missing |
+| `runner` | `CommandRunner` | `cross-spawn` runner | Runs every Docker command (build, login, tag, push) |
+
+Build and push confirmations are answered by the first available of: the `confirm` callback, `yes`, the built-in terminal prompt (only when `interactive` is `true` and stdin is a TTY). With `interactive: false` and neither `confirm` nor `yes`, `publish()` rejects with `ConfirmationRequiredError` before any AWS or Docker call.
+
+A missing repository is handled by `createRepo`, regardless of `yes`:
+
+| `createRepo` | `interactive: true` | `interactive: false` |
+|---|---|---|
+| `"prompt"` | ask via `confirm`, else the terminal prompt; declining cancels | `RepositoryMissingError` |
+| `"always"` | create without asking | create without asking |
+| `"never"` | `RepositoryMissingError` | `RepositoryMissingError` |
+
+Repository checks run before the build, so a missing-repo rejection leaves nothing built or pushed.
+
+### Errors
+
+All errors below extend `EcrPublisherError` and carry a stable `code`. Prefer `isEcrPublisherError(error, code)`, which checks `code` and works even if two copies of the package are installed.
+
+| Error | `code` | When |
+|-------|--------|------|
+| `ConfirmationRequiredError` | `CONFIRMATION_REQUIRED` | A confirmation is needed but nothing can answer it (headless without `confirm`/`yes`, or no TTY) |
+| `PublishCancelledError` | `CANCELLED` | A confirmation was declined; carries `step` |
+| `RepositoryMissingError` | `REPO_MISSING` | The repository is missing and `createRepo` does not allow creating it; carries `repo` |
+| `DigestNotFoundError` | `DIGEST_NOT_FOUND` | `docker push` output contained no digest; carries `imageTag` |
+| `CommandFailedError` | `COMMAND_FAILED` | A Docker command failed to spawn or exited non-zero; carries `command`, `exitCode`, `errorCode` |
 
 ## Troubleshooting
 

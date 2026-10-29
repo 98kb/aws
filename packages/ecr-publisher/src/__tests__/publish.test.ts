@@ -177,6 +177,17 @@ describe("publish", () => {
     expect(prompts).not.toHaveBeenCalled();
   });
 
+  it("rejects before any client or runner call when a TTY stdin has already closed", async () => {
+    Object.assign(process.stdin, {readableEnded: true, destroyed: true});
+    const {publisher, ecr, runner} = privatePublisher({});
+    await expect(publisher.publish(OPTIONS)).rejects.toBeInstanceOf(
+      ConfirmationRequiredError,
+    );
+    expect(ecr.send).not.toHaveBeenCalled();
+    expect(runner).not.toHaveBeenCalled();
+    expect(prompts).not.toHaveBeenCalled();
+  });
+
   it("rejects with DigestNotFoundError naming the pushed tag after the push (AE6)", async () => {
     const ecr = makePrivateClient();
     const runner = makeRunner("abc123: Pushed\n");

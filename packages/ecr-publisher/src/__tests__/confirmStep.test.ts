@@ -142,6 +142,14 @@ describe("confirmStep", () => {
       expect(mockedPrompts).not.toHaveBeenCalled();
     });
 
+    it("throws ConfirmationRequiredError without prompting when a TTY stdin has already ended", async () => {
+      Object.assign(stubStdin(true), {readableEnded: true, destroyed: true});
+      await expect(
+        confirmStep(makeContext({}), "build", "Build?"),
+      ).rejects.toBeInstanceOf(ConfirmationRequiredError);
+      expect(mockedPrompts).not.toHaveBeenCalled();
+    });
+
     it("proceeds when the built-in prompt answers true", async () => {
       mockedPrompts.mockResolvedValue({confirm: true});
       await expect(

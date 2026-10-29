@@ -1,5 +1,7 @@
+import type {CommandRunner} from "./CommandRunner";
 import type {ConfirmFn} from "./ConfirmFn";
 import type {CreateRepoPolicy} from "./CreateRepoPolicy";
+import {defaultRunner} from "./defaultRunner";
 import type {PublisherSettings} from "./PublisherSettings";
 
 export type ResolvedPublisherSettings = {
@@ -7,12 +9,14 @@ export type ResolvedPublisherSettings = {
   yes: boolean;
   interactive: boolean;
   createRepo: CreateRepoPolicy;
+  runner: CommandRunner;
 };
 
 const defaults: ResolvedPublisherSettings = {
   yes: false,
   interactive: true,
   createRepo: "prompt",
+  runner: defaultRunner,
 };
 
 export function normalizePublisherSettings(

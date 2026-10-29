@@ -9,9 +9,10 @@ import {buildDockerImage} from "./buildDockerImage";
 import {uploadImageToECR} from "./uploadImageToECR";
 import chalk from "chalk";
 import type {PublishResult} from "./PublishResult";
+import {normalizePublisherSettings} from "./normalizePublisherSettings";
 
 export class BaseEcrPublisher {
-  context: Context = {} as Context;
+  context: Context = {settings: normalizePublisherSettings()} as Context;
 
   readonly preBuildHooks: Hook[] = [];
   readonly postVersionBumpHooks: Hook[] = [];

@@ -5,3 +5,7 @@ export * from "./PublishEcrOptions";
 export * from "./PublishResult";
 export * from "./EcrPublisher";
 export * from "./PublicEcrPublisher";
+export * from "./errors";
+export type * from "./PublisherSettings";
+export type * from "./Hook";
+export type * from "./Context";

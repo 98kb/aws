@@ -9,14 +9,20 @@ import {buildDockerImage} from "./buildDockerImage";
 import {uploadImageToECR} from "./uploadImageToECR";
 import chalk from "chalk";
 import type {PublishResult} from "./PublishResult";
+import type {PublisherSettings} from "./PublisherSettings";
 import {normalizePublisherSettings} from "./normalizePublisherSettings";
+import {assertConfirmationAuthority} from "./assertConfirmationAuthority";
 
 export class BaseEcrPublisher {
-  context: Context = {settings: normalizePublisherSettings()} as Context;
+  context: Context;
 
   readonly preBuildHooks: Hook[] = [];
   readonly postVersionBumpHooks: Hook[] = [];
   readonly postBuildHooks: Hook[] = [];
+
+  constructor(settings?: PublisherSettings) {
+    this.context = {settings: normalizePublisherSettings(settings)} as Context;
+  }
 
   afterVersionBump(fn: Hook): this {
     this.postVersionBumpHooks.push(fn);
@@ -34,12 +40,13 @@ export class BaseEcrPublisher {
   }
 
   async publish(options: PublishEcrOptions): Promise<PublishResult> {
+    assertConfirmationAuthority(this.context.settings);
     this.context.options = options;
     await ensureECRRepo(this.context);
     await this.setNewVersion();
     const localImageTag = await buildDockerImage(this);
-    await uploadImageToECR(this.context, localImageTag);
-    return this.toPublishResult();
+    const {digest} = await uploadImageToECR(this.context, localImageTag);
+    return this.toPublishResult(digest);
   }
 
   async applyHooks(hooks: Hook[]): Promise<void> {
@@ -63,10 +70,11 @@ export class BaseEcrPublisher {
     await this.applyHooks(this.postVersionBumpHooks);
   }
 
-  private toPublishResult(): PublishResult {
-    return {
-      previousVersion: this.context.currentVersion,
-      newVersion: this.context.newVersion,
-    };
+  private toPublishResult(digest: string): PublishResult {
+    const {options, currentVersion, newVersion} = this.context;
+    if (options.overrideVersion) {
+      return {newVersion, digest};
+    }
+    return {previousVersion: currentVersion, newVersion, digest};
   }
 }

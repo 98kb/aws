@@ -9,71 +9,53 @@ import {
   DescribeRegistriesCommand,
 } from "@aws-sdk/client-ecr-public";
 import {printCommand} from "./printCommand";
-import {promptConfirmOrExit} from "./promptConfirmOrExit";
-import {executeCommand} from "./executeCommand";
-import {executeCommandWithStdin} from "./executeCommandWithStdin";
+import {confirmStep} from "./confirmStep";
+import {parsePushDigest} from "./parsePushDigest";
+import {DigestNotFoundError} from "./DigestNotFoundError";
 import chalk from "chalk";
 import type {Context} from "./Context";
+import type {ResolvedPublisherSettings} from "./normalizePublisherSettings";
 
+/**
+ * Logs in, tags, and pushes the image, returning the pushed tag and the digest
+ * from this run's `docker push` output.
+ */
 export async function uploadImageToECR(
-  {ecr, ecrPublic, options, newVersion}: Context,
+  context: Context,
   localImageTag: string,
-): Promise<string> {
-  if (options.public) {
-    return uploadImageToPublicECR(
-      ecrPublic!,
-      options,
-      newVersion,
-      localImageTag,
-    );
-  }
-  return uploadImageToPrivateECR(ecr!, options, newVersion, localImageTag);
-}
-
-async function uploadImageToPublicECR(
-  ecrPublic: ECRPUBLICClient,
-  options: Context["options"],
-  newVersion: string,
-  localImageTag: string,
-): Promise<string> {
-  const {token} = await getPublicECRAuth(ecrPublic);
-  await dockerLogin(token, "public.ecr.aws");
-  const alias = options.alias ?? (await getPublicRegistryAlias(ecrPublic));
-  const ecrImageTag = await tagImageForPublicECR(
-    localImageTag,
-    alias,
-    options.repo,
-    newVersion,
-  );
-  await pushImageToECR(ecrImageTag);
+): Promise<{imageTag: string; digest: string}> {
+  const ecrImageTag = context.options.public
+    ? await tagImageForPublicECR(context, localImageTag)
+    : await tagImageForPrivateECR(context, localImageTag);
+  const digest = await pushImageToECR(context, ecrImageTag);
   console.log(
     chalk.hex("#00FF00")(
       `\n🎉 Successfully uploaded image to ECR: ${ecrImageTag}`,
     ),
   );
+  return {imageTag: ecrImageTag, digest};
+}
+
+async function tagImageForPublicECR(
+  {ecrPublic, options, newVersion, settings}: Context,
+  localImageTag: string,
+): Promise<string> {
+  const {token} = await getPublicECRAuth(ecrPublic!);
+  await dockerLogin(settings, token, "public.ecr.aws");
+  const alias = options.alias ?? (await getPublicRegistryAlias(ecrPublic!));
+  const ecrImageTag = `public.ecr.aws/${alias}/${options.repo}:${newVersion}`;
+  await tagImage(settings, localImageTag, ecrImageTag);
   return ecrImageTag;
 }
 
-async function uploadImageToPrivateECR(
-  ecr: ECRClient,
-  options: Context["options"],
-  newVersion: string,
+async function tagImageForPrivateECR(
+  {ecr, options, newVersion, settings}: Context,
   localImageTag: string,
 ): Promise<string> {
-  const {token, registryUrl} = await getECRAuth(ecr);
-  await dockerLogin(token, registryUrl);
-  const ecrImageTag = await tagImageForECR(
-    localImageTag,
-    registryUrl,
-    options.repo,
-    newVersion,
-  );
-  await pushImageToECR(ecrImageTag);
-  console.log(
-    chalk.hex("#00FF00")(
-      `\n🎉 Successfully uploaded image to ECR: ${ecrImageTag}`,
-    ),
-  );
+  const {token, registryUrl} = await getECRAuth(ecr!);
+  await dockerLogin(settings, token, registryUrl);
+  const ecrImageTag = `${registryUrl}/${options.repo}:${newVersion}`;
+  await tagImage(settings, localImageTag, ecrImageTag);
   return ecrImageTag;
 }
 
@@ -108,47 +90,60 @@ async function getPublicRegistryAlias(
   return alias;
 }
 
-async function dockerLogin(token: string, registryUrl: string): Promise<void> {
+async function dockerLogin(
+  {runner, interactive}: ResolvedPublisherSettings,
+  token: string,
+  registryUrl: string,
+): Promise<void> {
   console.log("\n🔑 Logging into Docker with ECR credentials...");
   const [, password] = token.split(":");
-  await executeCommandWithStdin(
-    "docker",
-    ["login", "--username", "AWS", "--password-stdin", registryUrl],
-    password,
-  );
+  await runner({
+    command: "docker",
+    args: ["login", "--username", "AWS", "--password-stdin", registryUrl],
+    input: password,
+    interactive,
+  });
 }
 
-async function tagImageForECR(
+async function tagImage(
+  {runner, interactive}: ResolvedPublisherSettings,
   localImageTag: string,
-  registryUrl: string,
-  repoName: string,
-  version: string,
-): Promise<string> {
-  // Remove the protocol from the registry URL for Docker commands
-  const registryHost = registryUrl.replace(/^https?:\/\//, "");
-  const ecrImageTag = `${registryHost}/${repoName}:${version}`;
+  ecrImageTag: string,
+): Promise<void> {
   console.log(`🏷️  Tagging image for ECR: ${localImageTag} -> ${ecrImageTag}`);
   printCommand(`docker tag ${localImageTag} ${ecrImageTag}`);
-  await executeCommand("docker", ["tag", localImageTag, ecrImageTag]);
-  return ecrImageTag;
+  await runner({
+    command: "docker",
+    args: ["tag", localImageTag, ecrImageTag],
+    interactive,
+  });
 }
 
-async function tagImageForPublicECR(
-  localImageTag: string,
-  alias: string,
-  repoName: string,
-  version: string,
+async function pushImageToECR(
+  context: Context,
+  ecrImageTag: string,
 ): Promise<string> {
-  const ecrImageTag = `public.ecr.aws/${alias}/${repoName}:${version}`;
-  console.log(`🏷️  Tagging image for ECR: ${localImageTag} -> ${ecrImageTag}`);
-  printCommand(`docker tag ${localImageTag} ${ecrImageTag}`);
-  await executeCommand("docker", ["tag", localImageTag, ecrImageTag]);
-  return ecrImageTag;
-}
-
-async function pushImageToECR(ecrImageTag: string): Promise<void> {
   console.log(`📤 Pushing image to ECR: ${ecrImageTag}`);
   printCommand(`docker push ${ecrImageTag}`);
-  await promptConfirmOrExit("Do you want to push the Docker image to ECR?");
-  await executeCommand("docker", ["push", ecrImageTag]);
+  await confirmStep(
+    context,
+    "push",
+    "Do you want to push the Docker image to ECR?",
+  );
+  return runPushForDigest(context.settings, ecrImageTag);
+}
+
+async function runPushForDigest(
+  {runner, interactive}: ResolvedPublisherSettings,
+  ecrImageTag: string,
+): Promise<string> {
+  const {stdout} = await runner({
+    command: "docker",
+    args: ["push", ecrImageTag],
+    interactive,
+    captureStdout: true,
+  });
+  const digest = parsePushDigest(stdout);
+  if (!digest) throw new DigestNotFoundError(ecrImageTag);
+  return digest;
 }

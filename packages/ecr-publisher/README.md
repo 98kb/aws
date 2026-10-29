@@ -45,8 +45,10 @@ Your AWS credentials need the following ECR permissions:
 ### Basic Syntax
 
 ```bash
-ecr-publisher --repo <repository-name> [options] [context]
+ecr-publisher --repo <repository-name> [options] [--docker-args <args...> <context>]
 ```
+
+The build context (e.g. `.`) goes last inside `--docker-args`.
 
 ### Required Options
 

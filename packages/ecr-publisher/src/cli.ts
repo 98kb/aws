@@ -26,7 +26,7 @@ export function cli() {
     .option("--region <region>", "AWS region")
     .option(
       "--docker-args <args...>",
-      "Additional docker build arguments (e.g., --docker-args -f Dockerfile --build-arg NODE_ENV=production)",
+      "Docker build arguments, ending with the build context (e.g., --docker-args -f Dockerfile --build-arg NODE_ENV=production .)",
       [],
     )
     .option("--public", "Use public ECR repository", false)

@@ -45,8 +45,10 @@ Your AWS credentials need the following ECR permissions:
 ### Basic Syntax
 
 ```bash
-ecr-publisher --repo <repository-name> [options] [context]
+ecr-publisher --repo <repository-name> [options] [--docker-args <args...> <context>]
 ```
+
+The build context (e.g. `.`) goes last inside `--docker-args`.
 
 ### Required Options
 
@@ -60,7 +62,7 @@ ecr-publisher --repo <repository-name> [options] [context]
 |--------|-------------|---------|---------|
 | `--bump <type>` | Version bump type: `major`, `minor`, or `patch` | `minor` | `--bump patch` |
 | `--region <region>` | AWS region for ECR | Uses AWS default | `--region us-east-1` |
-| `--docker-args <args...>` | Additional docker build arguments (including dockerfile path) | None | `--docker-args -f Dockerfile --build-arg NODE_ENV=production` |
+| `--docker-args <args...>` | Docker build arguments, ending with the build context (e.g. `.`) | None | `--docker-args -f Dockerfile --build-arg NODE_ENV=production .` |
 | `--yes` | Auto-approve the build and push prompts. Never approves repo creation | `false` | `--yes` |
 | `--non-interactive` | Never prompt. Without `--yes`, fails before any AWS or Docker call | `false` | `--non-interactive` |
 | `--create-repo <policy>` | Missing-repo policy: `prompt`, `always`, or `never` | `prompt` | `--create-repo always` |
@@ -72,15 +74,16 @@ On success the CLI prints the pushed version and image digest. Cancelling a prom
 ### Basic Usage
 
 ```bash
-# Build and publish with minor version bump (requires dockerfile in docker args or default Dockerfile in context)
-ecr-publisher --repo analytics --bump minor --docker-args -f apps/analytics/Dockerfile
+# Build and publish with minor version bump.
+# --docker-args is passed to `docker build` as-is, so it must end with the build context (here `.`).
+ecr-publisher --repo analytics --bump minor --docker-args -f apps/analytics/Dockerfile .
 ```
 
 ### Specify AWS Region
 
 ```bash
 # Publish to specific AWS region
-ecr-publisher --region eu-west-1 --repo my-service --docker-args -f apps/my-service/Dockerfile
+ecr-publisher --region eu-west-1 --repo my-service --docker-args -f apps/my-service/Dockerfile .
 ```
 
 ### Custom Docker Arguments
@@ -88,7 +91,7 @@ ecr-publisher --region eu-west-1 --repo my-service --docker-args -f apps/my-serv
 ```bash
 # Pass custom docker build arguments including dockerfile path
 ecr-publisher --repo my-service \
-  --docker-args -f apps/my-service/Dockerfile --build-arg NODE_ENV=production --build-arg API_URL=https://api.prod.com
+  --docker-args -f apps/my-service/Dockerfile --build-arg NODE_ENV=production --build-arg API_URL=https://api.prod.com .
 ```
 
 ### Custom Build Context
